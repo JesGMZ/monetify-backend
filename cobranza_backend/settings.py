@@ -62,7 +62,8 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'cobranza_backend.urls'
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React local
+    "http://localhost:3000",
+    "https://monetifyweb.netlify.app",
 ]
 
 TEMPLATES = [

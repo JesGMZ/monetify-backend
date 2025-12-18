@@ -28,7 +28,6 @@ def reporte_estadisticas(request):
         start_date = datetime.strptime(start_date_str, '%d/%m/%Y').date()
         end_date = datetime.strptime(end_date_str, '%d/%m/%Y').date()
         
-        # Calcular período anterior para comparaciones
         periodo_dias = (end_date - start_date).days
         start_date_anterior = start_date - timedelta(days=periodo_dias)
         end_date_anterior = start_date - timedelta(days=1)
@@ -36,14 +35,13 @@ def reporte_estadisticas(request):
         print(f"Período actual: {start_date} a {end_date}")
         print(f"Período anterior: {start_date_anterior} a {end_date_anterior}")
         
-        # INGRESOS TOTALES (pagos activos en el período)
         ingresos_totales = Pago.objects.filter(
-            estado='Activo',  # Cambiado de 'CONFIRMADO' a 'Active'
+            estado='Activo',  
             fecha_pago__range=[start_date, end_date]
         ).aggregate(total=Sum('monto'))['total'] or 0
         
         ingresos_anterior = Pago.objects.filter(
-            estado='Activo',  # Cambiado de 'CONFIRMADO' a 'Active'
+            estado='Activo',
             fecha_pago__range=[start_date_anterior, end_date_anterior]
         ).aggregate(total=Sum('monto'))['total'] or 0
         
@@ -52,9 +50,8 @@ def reporte_estadisticas(request):
         print(f"Ingresos totales: {ingresos_totales}")
         print(f"Ingresos anteriores: {ingresos_anterior}")
         
-        # DEUDAS PENDIENTES (facturas pendientes + vencidas)
         deudas_pendientes = Factura.objects.filter(
-            estado__in=['Pendiente', 'Vencida']  # Estados correctos
+            estado__in=['Pendiente', 'Vencida']  
         ).aggregate(total=Sum('monto'))['total'] or 0
         
         deudas_anterior = Factura.objects.filter(
@@ -66,27 +63,24 @@ def reporte_estadisticas(request):
         
         print(f"Deudas pendientes: {deudas_pendientes}")
         print(f"Deudas anteriores: {deudas_anterior}")
-        
-        # EFECTIVIDAD DE COBRANZA
-        # Total facturas emitidas (todas las facturas existentes)
+
         total_facturas = Factura.objects.count()
         
-        # Facturas pagadas (total o parcialmente con pagos activos)
         facturas_pagadas = Factura.objects.filter(
             Q(estado='Pagada') | 
-            Q(pagos__estado='Activo')  # Cambiado de 'CONFIRMADO' a 'Active'
+            Q(pagos__estado='Activo') 
         ).distinct().count()
         
         efectividad_cobranza = (facturas_pagadas / total_facturas * 100) if total_facturas > 0 else 0
         
-        # Para el período anterior (simplificado)
+   
         total_facturas_anterior = Factura.objects.filter(
             fecha_emision__lte=end_date_anterior
         ).count()
         
         facturas_pagadas_anterior = Factura.objects.filter(
             Q(estado='Pagada') | 
-            Q(pagos__estado='Activo'),  # Cambiado de 'CONFIRMADO' a 'Active'
+            Q(pagos__estado='Activo'), 
             fecha_emision__lte=end_date_anterior
         ).distinct().count()
         
@@ -97,11 +91,9 @@ def reporte_estadisticas(request):
         print(f"Facturas pagadas: {facturas_pagadas}")
         print(f"Efectividad: {efectividad_cobranza}%")
         
-        # CLIENTES ACTIVOS
         clientes_activos = Cliente.objects.filter(estado='Activo').count()
         
-        # Nuevos clientes en el período (simplificado)
-        nuevos_clientes = Cliente.objects.count()  # Temporal
+        nuevos_clientes = Cliente.objects.count()  
         
         data = {
             'ingresos_totales': float(ingresos_totales),
@@ -139,9 +131,8 @@ def grafico_ingresos_deudas(request):
         end_date = datetime.strptime(end_date_str, '%d/%m/%Y').date()
         
         data = []
-        current_date = start_date.replace(day=1)  # Empezar desde el primer día del mes
+        current_date = start_date.replace(day=1) 
         
-        # Generar datos mensuales
         while current_date <= end_date:
             month_start = current_date
             if current_date.month == 12:
@@ -152,15 +143,13 @@ def grafico_ingresos_deudas(request):
             if month_end > end_date:
                 month_end = end_date
             
-            # Ingresos del mes (pagos activos)
             ingresos_mes = Pago.objects.filter(
-                estado='Activo',  # Cambiado de 'CONFIRMADO' a 'Active'
+                estado='Activo', 
                 fecha_pago__range=[month_start, month_end]
             ).aggregate(total=Sum('monto'))['total'] or 0
             
-            # Deudas del mes (facturas pendientes/vencidas al final del mes)
             deudas_mes = Factura.objects.filter(
-                estado__in=['Pendiente', 'Vencida'],  # Estados correctos
+                estado__in=['Pendiente', 'Vencida'],
                 fecha_emision__lte=month_end
             ).aggregate(total=Sum('monto'))['total'] or 0
             
@@ -170,7 +159,6 @@ def grafico_ingresos_deudas(request):
                 'deudas': float(deudas_mes)
             })
             
-            # Avanzar al siguiente mes
             if current_date.month == 12:
                 current_date = current_date.replace(year=current_date.year + 1, month=1, day=1)
             else:
@@ -198,7 +186,7 @@ def grafico_efectividad(request):
         end_date = datetime.strptime(end_date_str, '%d/%m/%Y').date()
         
         data = []
-        current_date = start_date.replace(day=1)  # Empezar desde el primer día del mes
+        current_date = start_date.replace(day=1) 
         
         while current_date <= end_date:
             month_start = current_date
@@ -210,16 +198,14 @@ def grafico_efectividad(request):
             if month_end > end_date:
                 month_end = end_date
             
-            # Facturas emitidas en el mes
             facturas_mes = Factura.objects.filter(
                 fecha_emision__range=[month_start, month_end]
             )
             total_facturas = facturas_mes.count()
             
-            # Facturas pagadas (total o parcialmente con pagos activos)
             facturas_pagadas = facturas_mes.filter(
                 Q(estado='Pagada') | 
-                Q(pagos__estado='Activo')  # Cambiado de 'CONFIRMADO' a 'Active'
+                Q(pagos__estado='Activo') 
             ).distinct().count()
             
             efectividad = (facturas_pagadas / total_facturas * 100) if total_facturas > 0 else 0
@@ -229,7 +215,6 @@ def grafico_efectividad(request):
                 'efectividad': round(efectividad, 2)
             })
             
-            # Avanzar al siguiente mes
             if current_date.month == 12:
                 current_date = current_date.replace(year=current_date.year + 1, month=1, day=1)
             else:

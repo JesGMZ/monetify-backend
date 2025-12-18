@@ -89,11 +89,11 @@ WSGI_APPLICATION = 'cobranza_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'cobranzadb',
-        'USER': 'postgres',
-        "PASSWORD": 'thunder123' ,
-        "HOST": 'localhost',
-        "PORT": '5432',
+        'NAME': 'monetifydb',
+        'USER': 'monetifydb_user',
+        'PASSWORD': 'xLqx21H7cz1j1QRQsseIPScmH8SE2gVq',
+        'HOST': 'dpg-d51s7bm3jp1c73f3omcg-a.oregon-postgres.render.com',
+        'PORT': '5432',
     }
 }
 
